@@ -1,4 +1,4 @@
-[nova_code (1).html](https://github.com/user-attachments/files/34702589/nova_code.1.html)
+[nova_code (2).html](https://github.com/user-attachments/files/34702727/nova_code.2.html)
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -29,7 +29,7 @@ const NOVA_ART = [
   "██╔██╗ ██║██║   ██║██║   ██║███████║",
   "██║╚██╗██║██║   ██║╚██╗ ██╔╝██╔══██║",
   "██║ ╚████║╚██████╔╝ ╚████╔╝ ██║  ██║",
-  "435232532",
+  "╚═╝  ╚═══╝ ╚═════╝   ╚═══╝  ╚═╝  ╚═╝",
 ];
 const CODE_ART = [
   " ██████╗ ██████╗ ██████╗ ███████╗",
@@ -48,6 +48,23 @@ const center = lines => {
 };
 const ART = [...center(NOVA_ART), " ".repeat(WC), ...center(CODE_ART)];
 const HC = ART.length;
+
+// Кожна літера має свій номер: N-O-V-A = 0-3, C-O-D-E = 4-7
+const NL = 8;
+const LET = ART.map(() => new Array(WC).fill(-1));
+(function () {
+  const map = (row0, left, widths, base) => {
+    for (let r = row0; r < row0 + 6; r++) {
+      let x = left;
+      widths.forEach((w, i) => {
+        for (let cx = x; cx < x + w; cx++) LET[r][cx] = base + i;
+        x += w;
+      });
+    }
+  };
+  map(0, 0, [10, 9, 9, 8], 0);
+  map(7, Math.floor((WC - 33) / 2), [8, 9, 8, 8], 4);
+})();
 
 const ALPHA = "NOVACODE0123456789ABCDEFNOVA";
 const GRAIN = ART.map((_, cy) => [...Array(WC)].map((_, cx) => ((cx * 7 + cy * 13) % 5 - 2) * 0.015));
@@ -114,14 +131,16 @@ function draw(level, t, reveal) {
       } else if (b + 0.5 <= surface) {
         ctx.fillStyle = "rgb(195,170,255)";
         drawGlyph(c, x, y);
-      } else if (cx < reveal) {
+      } else if (reveal - LET[cy][cx] > 0) {
+        const flash = reveal - LET[cy][cx] < 0.6; // літера щойно з'явилась
         if (c === "█") {
           // всередині літер - букви та цифри, частина мерехтить
           const flick = (cx + cy) % 3 === 0 ? Math.floor(t * 10) : 0;
-          ctx.fillStyle = (cx * 7 + cy * 3) % 5 === 0 ? "rgb(125,85,235)" : "rgb(66,33,148)";
+          ctx.fillStyle = flash ? "rgb(190,160,255)"
+            : (cx * 7 + cy * 3) % 5 === 0 ? "rgb(125,85,235)" : "rgb(66,33,148)";
           ctx.fillText(ALPHA[(cx * 31 + cy * 17 + flick) % ALPHA.length], x + CW / 2, y + CHH / 2 + 1);
         } else {
-          ctx.fillStyle = "rgb(48,25,105)";
+          ctx.fillStyle = flash ? "rgb(190,160,255)" : "rgb(48,25,105)";
           drawBox(c, x, y);
         }
       }
@@ -137,9 +156,9 @@ function play() {
 
   function step() {
     if (id !== running) return;
-    if (phase === 0) {            // 1) форма проявляється зліва направо
-      reveal += 0.7;
-      if (reveal > WC) { phase = 1; wait = 20; }
+    if (phase === 0) {            // 1) літери з'являються по одній
+      reveal += 0.06;
+      if (reveal > NL + 0.7) { phase = 1; wait = 20; }
     } else if (phase === 1) {     // пауза
       if (--wait <= 0) phase = 2;
     } else if (phase === 2) {     // 2) заливка знизу вгору
